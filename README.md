@@ -9,6 +9,7 @@
 * [Visualization](#Visualization)
 
 # Objective | Analyze Hawaii Climate for Optimal Vacation
+Use Python and SQLAlchemy to do basic climate analysis and data exploration of your climate database.
 
 # Technologies
 * Python
@@ -21,51 +22,105 @@
 
 ## Step 1 - Climate Analysis and Exploration
 
-To begin, use Python and SQLAlchemy to do basic climate analysis and data exploration of your climate database. All of the following analysis should be completed using SQLAlchemy ORM queries, Pandas, and Matplotlib.
-
-* Use the provided [starter notebook](climate_starter.ipynb) and [hawaii.sqlite](Resources/hawaii.sqlite) files to complete your climate analysis and data exploration.
-
 * Choose a start date and end date for your trip. Make sure that your vacation range is approximately 3-15 days total.
 
 * Use SQLAlchemy `create_engine` to connect to your sqlite database.
+```
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+```
 
 * Use SQLAlchemy `automap_base()` to reflect your tables into classes and save a reference to those classes called `Station` and `Measurement`.
+```
+# reflect an existing database into a new model
+Base = automap_base()
+
+# reflect the tables
+Base.prepare(engine, reflect=True)
+```
 
 ### Precipitation Analysis
 
-* Design a query to retrieve the last 12 months of precipitation data.
+* Design a query to retrieve the last 12 months of precipitation data, selecting only the `date` and `prcp` values.
+```
+precipitation = session.query(Measurements.date, func.avg(Measurements.prcp)).\
+    group_by(Measurements.date).\
+    order_by(Measurements.date.desc()).limit(365).all()
+precipitation
+```
 
-* Select only the `date` and `prcp` values.
-
-* Load the query results into a Pandas DataFrame and set the index to the date column.
-
-* Sort the DataFrame values by `date`.
+* Load the query results into a Pandas DataFrame and set the index to the date column sorted by `date`.
+```
+precipitation_df = pd.DataFrame(precipitation, columns=['Date', 'Average Precipitation (in)'])
+precipitation_df.set_index('Date', inplace=True, )
+precipitation_df = precipitation_df.iloc[::-1]
+precipitation_df
+```
 
 * Plot the results using the DataFrame `plot` method.
-
-  ![precipitation](Images/precipitation.png)
+```
+prcp_plot = precipitation_df.plot(rot=90, title= "Average Precipitation per Day Over the Past Year")
+prcp_plot.set_ylabel("Average Precipitation (in)")
+plt.savefig("Images/AvgPrecPerDay.png")
+```
 
 * Use Pandas to print the summary statistics for the precipitation data.
+```
+precipitation_df.describe()
+```
 
 ### Station Analysis
 
 * Design a query to calculate the total number of stations.
+```
+station_count = session.query(Measurements.station, func.count(Measurements.station)).\
+    group_by(Measurements.station).all()
+
+print("There are " + str(len(station_count)) + " stations in this dataset.")
+```
 
 * Design a query to find the most active stations.
 
   * List the stations and observation counts in descending order.
+  ```
+  active_stations = session.query(Measurements.station, func.count(Measurements.station)).\
+    group_by(Measurements.station).\
+    order_by(func.count(Measurements.station).desc()).all()
+  active_stations
+  ```
 
   * Which station has the highest number of observations?
-
-  * Hint: You may need to use functions such as `func.min`, `func.max`, `func.avg`, and `func.count` in your queries.
-
+  ```
+  most_active_station = session.query(Measurements.station).\
+    group_by(Measurements.station).\
+    order_by(func.count(Measurements.station).desc()).first()
+  most_active_station
+  ```
+  
 * Design a query to retrieve the last 12 months of temperature observation data (TOBS).
 
   * Filter by the station with the highest number of observations.
-
+  ```
+  most_active_station_data = session.query(Measurements.station, func.min(Measurements.tobs), func.max(Measurements.tobs), func.avg(Measurements.tobs)).\
+      filter(Measurements.station == most_active_station[0]).all()
+      
+  print("The lowest temperature recorded at station " + most_active_station_data[0][0] + " is " + str(most_active_station_data[0][1]) + " degrees.")
+  print("The highest temperature recorded at station " + most_active_station_data[0][0] + " is " + str(most_active_station_data[0][2]) + " degrees.")
+  print("The average temperature at station " + most_active_station_data[0][0] + " is " + str(round(most_active_station_data[0][3], 2)) + " degrees.")
+  tob_12month = session.query(Measurements.date, Measurements.tobs).\
+    filter(Measurements.station==most_active_station[0]).\
+    filter(Measurements.date > '2016-08-18').\
+    order_by(Measurements.date.desc()).all()
+  tob_12month
+  ```
   * Plot the results as a histogram with `bins=12`.
-
-    ![station-histogram](Images/station-histogram.png)
+  ```
+  plt.hist(tobs, bins=12)
+  plt.xlabel("TOB")
+  plt.ylabel("Frequency")
+  plt.title("Frequency of TOBs at Station " +  most_active_station[0])
+  plt.savefig("Images/FreqOfTOBs.png")
+  plt.show()
+  ```
 
 - - -
 
@@ -131,18 +186,58 @@ Now that you have completed your initial analysis, design a Flask API based on t
 ### Daily Rainfall Average
 
 * Calculate the rainfall per weather station using the previous year's matching dates.
+```
+trip_dates = ['2011-02-28', '2011-03-05']
+
+trip_prcp = session.query(Measurements.station, func.sum(Measurements.prcp), Stations.latitude, Stations.longitude, Stations.elevation).\
+    filter(Measurements.date >= trip_dates[0]).\
+    filter(Measurements.date <= trip_dates[-1]).\
+    filter(Measurements.station == Stations.station).\
+    group_by(Measurements.station).\
+    order_by(func.sum(Measurements.prcp).desc()).all()
+trip_prcp
+```
 
 * Calculate the daily normals. Normals are the averages for the min, avg, and max temperatures.
-
-* You are provided with a function called `daily_normals` that will calculate the daily normals for a specific date. This date string will be in the format `%m-%d`. Be sure to use all historic TOBS that match that date string.
+```
+def daily_normals(date):
+    """Daily Normals.
+    
+    Args:
+        date (str): A date string in the format '%m-%d'
+        
+    Returns:
+        A list of tuples containing the daily normals, tmin, tavg, and tmax
+    
+    """
+    
+    sel = [func.min(Measurements.tobs), func.avg(Measurements.tobs), func.max(Measurements.tobs)]
+    return session.query(*sel).filter(func.strftime("%m-%d", Measurements.date) == date).all()
+    
+daily_normals("01-01")
+```
 
 * Create a list of dates for your trip in the format `%m-%d`. Use the `daily_normals` function to calculate the normals for each date string and append the results to a list.
+```
+trip_days = ["02-28", "03-01", "03-02", "03-03", "03-04", "03-05"]
+normals = [daily_normals(date)[0] for date in trip_days]
+normals
+```
 
 * Load the list of daily normals into a Pandas DataFrame and set the index equal to the date.
+```
+normals_df = pd.DataFrame(normals, columns=["tmin", "tavg", "tmax"], index = trip_days)
+normals_df
+```
 
 * Use Pandas to plot an area plot (`stacked=False`) for the daily normals.
+```
+area_plot = normals_df.plot.area(stacked=False, title="Temperature Normals for Each Day of Trip")
+area_plot.set_xlabel("Date")
+area_plot.set_ylabel("Temperature (F)")
+plt.savefig("Images/TempNormEaDay.png")
+```
 
-  ![daily-normals](Images/daily-normals.png)
 # Visualization
 * Average Precipitation Per Day
 
