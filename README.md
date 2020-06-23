@@ -9,7 +9,7 @@
 * [Visualization](#Visualization)
 * [Troubleshooting](#Troubleshooting)
 
-# Objective | Analyze Hawaii climate information for optimal vacation
+# Objective | Analyze Hawaii Climate for Optimal Vacation
 
 # Technologies
 * Python
