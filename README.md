@@ -5,11 +5,20 @@
 ## Table of Contents
 * [Objective](#Objective)
 * [Technologies](#Technologies)
-* [Process](#Technologies)
+* [Process](#Process)
 * [Visualization](#Visualization)
 * [Troubleshooting](#Troubleshooting)
 
-# Objective | 
+# Objective | Analyze Hawaii climate information for optimal vacation
+
+# Technologies
+* Python
+* SQLAlchemy
+* Pandas
+* Matplotlib
+* Flask
+
+# Process
 
 ## Step 1 - Climate Analysis and Exploration
 
