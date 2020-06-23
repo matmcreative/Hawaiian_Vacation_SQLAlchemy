@@ -1,5 +1,14 @@
 # SQLAlchemy Challenge
 
+<img src="Images/surfs-up.png" width=350 align=right>
+
+## Table of Contents
+* [Objective](#Objective)
+* [Technologies](#Technologies)
+* [Process](#Technologies)
+* [Visualization](#Visualization)
+* [Troubleshooting](#Troubleshooting)
+
 ## Step 1 - Climate Analysis and Exploration
 
 To begin, use Python and SQLAlchemy to do basic climate analysis and data exploration of your climate database. All of the following analysis should be completed using SQLAlchemy ORM queries, Pandas, and Matplotlib.
