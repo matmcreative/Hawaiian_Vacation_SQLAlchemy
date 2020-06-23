@@ -144,3 +144,14 @@ Now that you have completed your initial analysis, design a Flask API based on t
 
   ![daily-normals](Images/daily-normals.png)
 # Visualization
+  * Average Precipitation Per Day
+  <img src="Images/AvgPrecPerDay.png" width=500 align=right>
+  
+  * Frequency of TOB's
+  <img src="Images/FreqOfTOBs.png" width=500 align=right>
+  
+  * Termperture Norms Each Day
+  <img src="Images/TempNormEaDay.png" width=500 align=right>
+  
+  * Trip Average Temperatures
+  <img src="Images/TripAvgTemp.png" width=500 align=right>
